@@ -1,0 +1,124 @@
+{
+  "log": {
+    "level": "debug"
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "udp",
+        "tag": "google-udp",
+        "server": "8.8.8.8"
+      },
+      {
+        "type": "tcp",
+        "tag": "google-tcp",
+        "server": "8.8.8.8"
+      },
+      {
+        "type": "tls",
+        "tag": "google-tls",
+        "server": "8.8.8.8"
+      },
+      {
+        "type": "https",
+        "tag": "google-https",
+        "server": "8.8.8.8",
+        "path": "/dns-query"
+      },
+      {
+        "type": "local",
+        "tag": "local-dns"
+      },
+      {
+        "type": "hosts",
+        "tag": "hosts-dns",
+        "predefined": {
+          "example.local": ["127.0.0.1"],
+          "api.local": ["10.0.0.1"]
+        }
+      },
+      {
+        "type": "fakeip",
+        "tag": "fakeip-dns",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "domain": ["example.local", "api.local"],
+        "server": "hosts-dns"
+      },
+      {
+        "domain_suffix": [".cn", ".中国"],
+        "server": "local-dns"
+      },
+      {
+        "domain_keyword": ["google", "youtube", "github"],
+        "server": "google-https"
+      },
+      {
+        "query_type": ["AAAA"],
+        "action": "reject"
+      },
+      {
+        "domain_suffix": [".lan", ".local"],
+        "action": "predefined",
+        "rcode": "NXDOMAIN"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "domain_suffix": [".dev"]
+          },
+          {
+            "query_type": ["A", "AAAA"]
+          }
+        ],
+        "server": "google-tls"
+      },
+      {
+        "clash_mode": "Direct",
+        "server": "local-dns"
+      },
+      {
+        "clash_mode": "Global",
+        "server": "google-https"
+      }
+    ],
+    "final": "google-udp",
+    "strategy": "prefer_ipv4",
+    "disable_cache": false,
+    "cache_capacity": 1024,
+    "reverse_mapping": true
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": 2080
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct-out"
+    },
+    {
+      "type": "block",
+      "tag": "block-out"
+    }
+  ],
+  "route": {
+    "default_domain_resolver": "google-udp",
+    "rules": [
+      {
+        "port": 53,
+        "action": "hijack-dns"
+      }
+    ]
+  }
+}
